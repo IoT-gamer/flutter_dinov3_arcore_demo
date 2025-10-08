@@ -27,7 +27,7 @@ class SegmentationProcessor(private val context: Context) {
 
     companion object {
         private const val PATCH_SIZE = 16
-        private const val IMAGE_SIZE = 512 // From AppConstants.inputSize
+        private const val IMAGE_SIZE = 400 
         private val IMAGENET_MEAN = floatArrayOf(0.485f, 0.456f, 0.406f)
         private val IMAGENET_STD = floatArrayOf(0.229f, 0.224f, 0.225f)
     }
