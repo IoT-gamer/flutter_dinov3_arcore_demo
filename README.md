@@ -2,7 +2,7 @@
 
 This repository contains a Flutter application demonstrating real-time object segmentation in an Augmented Reality (AR) environment. The project uses the DINOv3 model as a feature extractor, running on-device via ONNX Runtime, to segment objects in a live camera feed from an Android device. The segmentation mask is then used to place a 3D object in the real world using ARCore.
 
-The core idea is to provide the application with a single reference image (a "prototype") of an object. The app then continuously analyzes the camera feed, identifies the object that is most similar to the prototype, and highlights it with an overlay. It also calculates the object's center (centroid) to allow for AR object placement via automatic [hit-test](https://developers.google.com/ar/develop/hit-test).
+The core idea is to provide the application with a single reference image (a "prototype") of an object. The app then continuously analyzes the camera feed, identifies the object that is most similar to the prototype, and highlights it with an overlay. It also calculates the object's center (centroid) to allow for AR object placement via automatic [instant placement hit-test](https://developers.google.com/ar/develop/java/instant-placement/developer-guide#kotlin_2).
 
 ## 📸 Screenshots
 <img src="docs/images/demo1.jpg" alt="drawing" height="300"/> <img src="docs/images/demo2.jpg" alt="drawing" height="300"/>
@@ -52,7 +52,7 @@ The application has a hybrid architecture, combining a Flutter frontend with a n
 
     * **Rendering (`OverlayRenderer.kt`):** The final scores are used by an OpenGL shader to draw a semi-transparent colored mask over the detected object in real-time.
 
-    * **Hit-Testing:** When a placement is requested, it uses the calculated centroid coordinates to perform an ARCore hit-test against real-world surfaces to find a valid location for an anchor.
+    * **Hit-Testing:** When a placement is requested, it uses the calculated centroid coordinates to perform an ARCore instant placement hit-test.
 
 ## 🚀 Getting Started
 **Prerequisites**
@@ -113,7 +113,6 @@ The application has a hybrid architecture, combining a Flutter frontend with a n
 
 ## ❗ Troubleshooting
 * **No Overlay Appears:** Move the camera slowly closer and ensure the object is well-lit and clearly visible.
-* **Overlay Appears but No Object is Placed:** Ensure there is a flat surface near the object for ARCore to place the anchor. Move the camera around slowly to help ARCore detect surfaces. Place object on a flat surface.
 * **Black Screen:** Ensure your camera cover is open before app starts and that the app has camera permissions.
 
 

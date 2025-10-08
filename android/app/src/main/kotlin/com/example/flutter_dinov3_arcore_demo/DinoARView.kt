@@ -209,22 +209,28 @@ class DinoARView(
                 glSurfaceView.queueEvent {
                     try {
                         val frame = currentSession.update()
-                        val hitResults = frame.hitTest(screenX, screenY)
+
+                        // 1. Define an estimated distance for the object.
+                        // This is how far from the camera the object will initially appear.
+                        val approximateDistanceMeters = 0.5f;
+
+                        // 2. Use hitTestInstantPlacement with the screen coordinates and distance.
+                        val hitResults = frame.hitTestInstantPlacement(screenX, screenY, approximateDistanceMeters)
 
                         if (hitResults.isNotEmpty()) {
-                            val hit = hitResults.firstOrNull {
-                                // Check if the hit is on a plane OR an instant placement point
-                                val trackable = it.trackable
-                                (trackable is com.google.ar.core.Plane && trackable.isPoseInPolygon(it.hitPose)) ||
-                                (trackable is com.google.ar.core.Point && trackable.orientationMode == com.google.ar.core.Point.OrientationMode.ESTIMATED_SURFACE_NORMAL)
-                            }
+                            val hit = hitResults.first() // We can just take the first result
 
-                            if (hit != null) {
+                            // This trackable will be an InstantPlacementPoint.
+                            val trackable = hit.trackable
+
+                            // We can still add this check for safety, though it's guaranteed by the method.
+                            if (trackable is com.google.ar.core.InstantPlacementPoint) {
                                 // Limit the number of anchors
                                 if (anchors.size >= 20) {
                                     anchors[0].detach()
                                     anchors.removeAt(0)
                                 }
+                                // Create the anchor from the hit result's pose
                                 anchors.add(hit.createAnchor())
                                 mainScope.launch { result.success(true) }
                             } else {
@@ -272,6 +278,7 @@ class DinoARView(
                 session = Session(context)
                 val arConfig = Config(session)
                 arConfig.focusMode = Config.FocusMode.AUTO
+                arConfig.planeFindingMode = Config.PlaneFindingMode.HORIZONTAL_AND_VERTICAL
                 arConfig.instantPlacementMode = Config.InstantPlacementMode.LOCAL_Y_UP
                 session?.configure(arConfig)
             }
