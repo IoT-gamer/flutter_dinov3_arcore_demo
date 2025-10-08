@@ -83,6 +83,12 @@ class DinoARView(
     @Volatile private var lastCentroid: Pair<Float, Float>? = null
     @Volatile private var patchGridSize: Pair<Int, Int>? = null
 
+    private val recentCentroids = mutableListOf<Pair<Float, Float>>()
+    companion object {
+        private const val SMOOTHING_WINDOW_SIZE = 5 // The number of measurements to average
+    }
+
+
     init {
         // // Initialize OpenCV
         if (!OpenCVLoader.initDebug()) {
@@ -172,6 +178,11 @@ class DinoARView(
                     result.error("INVALID_ARGS", "Byte array is null", null)
                 }
             }
+            "clearHistory" -> {
+                recentCentroids.clear()
+                lastCentroid = null
+                result.success(null)
+            }
             "toggleSegmentation" -> {
                 isSegmenting = !isSegmenting
                 result.success(isSegmenting)
@@ -186,6 +197,11 @@ class DinoARView(
                 }
             }
             "placeObjectAtCentroid" -> {
+                if (recentCentroids.size < SMOOTHING_WINDOW_SIZE) {
+                    // Not enough data points for a stable average yet
+                    result.success(false)
+                    return
+                }
                 val currentCentroid = lastCentroid
                 val currentGridSize = patchGridSize
                 val currentSession = session
@@ -402,7 +418,26 @@ class DinoARView(
                                 val centroidX = result["centroid_x"] as Float
                                 val centroidY = result["centroid_y"] as Float
                                 if (centroidX > 0 && centroidY > 0) {
-                                    lastCentroid = Pair(centroidX, centroidY)
+                                    val newCentroid = Pair(centroidX, centroidY)
+                                    
+                                    // --- SIMPLE MOVING AVERAGE (SMA) LOGIC ---
+                                    // Add the new centroid to our history
+                                    recentCentroids.add(newCentroid)
+
+                                    Log.d("DinoARView", "New centroid: $newCentroid, Recent centroids: $recentCentroids")
+                                    Log.d("DinoARView", "Smoothing window size: ${SMOOTHING_WINDOW_SIZE}")
+                                    // If the list is too long, remove the oldest measurement
+                                    if (recentCentroids.size > SMOOTHING_WINDOW_SIZE) {
+                                        recentCentroids.removeAt(0)
+                                    }
+
+                                    // Calculate the average of all centroids in the list
+                                    val averageX = recentCentroids.map { it.first }.average().toFloat()
+                                    val averageY = recentCentroids.map { it.second }.average().toFloat()
+
+                                    // Update lastCentroid with the new averaged position
+                                    lastCentroid = Pair(averageX, averageY)
+                                    
                                 } else {
                                     lastCentroid = null // No object found
                                 }

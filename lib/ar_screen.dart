@@ -29,6 +29,7 @@ class _ARScreenState extends State<ARScreen> {
     setState(() => _isCreatingPrototype = true);
 
     try {
+      await _channel.invokeMethod('clearHistory');
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(source: ImageSource.gallery);
       if (pickedFile == null) return;
